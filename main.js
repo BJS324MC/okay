@@ -9,9 +9,9 @@ const rad = n => n * Math.PI / 180,
         return a[0] * a[0] - 2 * a[0] * c[0] + a[1] * a[1] - 2 * a[1] * c[1] < b[0] * b[0] - 2 * b[0] * c[0] + b[1] * b[1] - 2 * b[1] * c[1]
     },
     directBall = () => {
-        endPos = shapes.map(a => [a.intersect(ogShot.concat(shotSpeed)),a.id]).filter(a => a[0] !== false && a[1] !== contacted);
+        endPos = shapes.map(a => [a.intersect(ogShot.concat(shotSpeed)), a.id]).filter(a => a[0] !== false && a[1] !== contacted);
         if (endPos.length > 1) endPos = endPos.reduce((a, b) => compareAtoBfromC(a[0], b[0], ogShot) ? a : b);
-        else if (endPos.length > 0) endPos = endPos[0]; 
+        else if (endPos.length > 0) endPos = endPos[0];
         contacted = endPos[1];
         if (endPos.length > 0) endPos = endPos[0];
 
@@ -31,23 +31,29 @@ const rad = n => n * Math.PI / 180,
             reflectionRay = equation(otherPointX, otherPointY, px, py);
         return [reflectionRay, [otherPointX - px, otherPointY - py]];
     },
-    raySegmentIntersection = (ray, segment) => {
-        let [x, y, dx, dy] = ray,
-            [x1, y1, x2, y2] = segment,
-            [m1, c1] = equation(x, y, x + dx, y + dy),
-            [m2, c2] = equation(x1, y1, x2, y2);
-        let [px, py] = LineLineIntersection(m1, c1, m2, c2);
-        px = +px.toFixed(3);
-        py = +py.toFixed(3);
-        if (px * normalized(dx) >= x * normalized(dx) && py * normalized(dy) >= y * normalized(dy)) {
-            let C1 = x1 < x2,
-                C2 = y1 < y2,
-                xMin = C1 ? x1 : x2, yMin = C2 ? y1 : y2,
-                xMax = C1 ? x2 : x1, yMax = C2 ? y2 : y1;
-            if (py >= yMin && py <= yMax && ((px >= xMin && px <= xMax) || ((Math.abs(m1) > 10000 || Math.abs(m2) > 10000)))) return [px, py, m1, c1, m2, c2];
-        }
-        return false;
-    },
+    reflectVertically = (px, py, m1, c1) => {
+        let otherPointX = px - 1,
+            otherPointY = -m1 * (px - 1) + 2 * m1 * px + c1,
+            reflectionRay = equation(otherPointX, otherPointY, px, py);
+        return [reflectionRay, [otherPointX - px, otherPointY - py]];
+    }
+raySegmentIntersection = (ray, segment) => {
+    let [x, y, dx, dy] = ray,
+        [x1, y1, x2, y2] = segment,
+        [m1, c1] = equation(x, y, x + dx, y + dy),
+        [m2, c2] = equation(x1, y1, x2, y2);
+    let [px, py] = LineLineIntersection(m1, c1, m2, c2);
+    px = +px.toFixed(3);
+    py = +py.toFixed(3);
+    if (px * normalized(dx) >= x * normalized(dx) && py * normalized(dy) >= y * normalized(dy)) {
+        let C1 = x1 < x2,
+            C2 = y1 < y2,
+            xMin = C1 ? x1 : x2, yMin = C2 ? y1 : y2,
+            xMax = C1 ? x2 : x1, yMax = C2 ? y2 : y1;
+        if (py >= yMin && py <= yMax && ((px >= xMin && px <= xMax) || ((Math.abs(m1) > 10000 || Math.abs(m2) > 10000)))) return [px, py, m1, c1, m2, c2];
+    }
+    return false;
+},
     lineCircleIntersection = (a, b, c, p, q, r) => {
         let f = 1 + a * a / b * b, g = (2 * a / b) * (q - c / b) - 2 * p, h = c * c / (b * b) - ((2 * q * c) / b) + p * p + q * q - r * r;
         let intersections = [], n = g * g - 4 * f * h;
@@ -77,7 +83,7 @@ class Circle {
         let [px, py] = compareAtoBfromC(intersection[0], intersection[1], ray) ? intersection[0] : intersection[1],
             m2 = (this.x - px) / (py - this.y),
             c2 = py - m2 * px;
-        if(px * normalized(dx) >= x * normalized(dx) && py * normalized(dy) >= y * normalized(dy)) return [px, py, m1, c1, m2, c2];
+        if (px * normalized(dx) >= x * normalized(dx) && py * normalized(dy) >= y * normalized(dy)) return [px, py, m1, c1, m2, c2];
         else return false;
     }
     draw(ctx) {
@@ -165,8 +171,8 @@ let shot = null,
     shapes = [
         new Polygon([[-100, -100], [-250, 50], [-180, 200], [-20, 200], [50, 50]], 300, 300, 0),
         new Circle(100, 100, 50),
-        new Polygon([[0, -50], [-50, 50], [50, 50] ], 400, 200, 0),
-        new Polygon([[-100, -100], [-100, 100], [100, 100], [100, -100]], 600, 300, 10)
+        new Polygon([[0, -50], [-50, 50], [50, 50]], 400, 200, 0),
+        new Polygon([[-100, -100], [-100, 100], [100, 100], [100, -100]], 600, 300, 0)
     ];
 
 const frame = () => {
@@ -210,7 +216,7 @@ const frame = () => {
                 else if (!A && !B) C = shot[0] * S0 > px * S0 && shot[1] * S1 > py * S1;
                 if (C) {
                     effectFinished = true;
-                    let reflection = reflectPoint(...endPos),
+                    let reflection = Math.abs(m2) > 10000 ? reflectVertically(...endPos) : reflectPoint(...endPos),
                         [dx, dy] = reflection[1],
                         m = Math.sqrt(dx ** 2 + dy ** 2);
                     if (m2 * ogShot[0] + c2 <= ogShot[1] === m2 * (px + dx) + c2 >= py + dy) {
@@ -261,12 +267,13 @@ const holding = e => {
                 directBall();
             };
         }
-    };
+    },
+    mobile = fn => e => fn(e.touches[0]);
 
 addEventListener('mousedown', holding);
 addEventListener('mousemove', moving);
 addEventListener('mouseup', releasing);
 
-addEventListener('touchstart', holding);
-addEventListener('touchmove', moving);
-addEventListener('touchend', releasing);
+addEventListener('touchstart', mobile(holding));
+addEventListener('touchmove', mobile(moving));
+addEventListener('touchend', mobile(releasing));
