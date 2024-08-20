@@ -237,7 +237,6 @@ const canvas = document.querySelector('canvas'),
 
 const text = (x, y, t) => {
     ctx.textAlign = "center";
-    ctx.font = "13pt Arial";
     ctx.fillStyle = 'rgb(125,150,150)';
     ctx.fillText(t, x, y);
 },
@@ -365,7 +364,14 @@ const frame = () => {
         ctx.lineTo(ogShot[0] - easeInOutSine(tClosing) * f, ogShot[1] + easeInOutSine(tClosing) * f);
         ctx.stroke();
     }
-    text(100, 105, "okay?");
+    if (innerWidth < innerHeight) {
+        ctx.font = "17pt Arial";
+        text(150, 155, "okay?");
+    }
+    else {
+        ctx.font = "13pt Arial";
+        text(100, 105, "okay?");
+    }
     requestAnimationFrame(frame);
 }
 
