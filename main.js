@@ -2,6 +2,7 @@ import { Soundfont } from "https://unpkg.com/smplr/dist/index.mjs";
 const context = new AudioContext(); // create the audio context
 var marimba = new Soundfont(context, { instrument: "vibraphone" });
 document.querySelector('canvas').addEventListener("click", () => context.resume());
+document.querySelector('canvas').addEventListener("touchstart", () => context.resume());
 
 const rad = n => n * Math.PI / 180,
     generateId = newID(),
